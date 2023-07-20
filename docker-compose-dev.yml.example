@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  web:
+    build: ./dockerfiles/Dockerfile.dev
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - PORT=3000
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:15.3-alpine3.18
+    restart: always
+    environment:
+      POSTGRES_USER: foodappuser
+      POSTGRES_DB: food_app
+      POSTGRES_PASSWORD: 1234
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
