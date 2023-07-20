@@ -3,6 +3,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var debug = require('debug')('food-app:server');
 var http = require('http');
+const config = require('config');
+require('dotenv').config();
 
 var indexRouter = require('./routes/index');
 
