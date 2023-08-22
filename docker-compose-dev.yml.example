@@ -12,6 +12,7 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=development
+      - DATABASE_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE # change to your own variable
     depends_on:
       - postgres
   postgres:

@@ -3,10 +3,11 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var debug = require('debug')('food-app:server');
 var http = require('http');
-const config = require('config');
 require('dotenv').config();
+var session = require('express-session')
 
 var indexRouter = require('./routes/index');
+var userRouter = require('./routes/user');
 
 var app = express();
 var port = normalizePort(process.env.PORT || '3000');
@@ -17,7 +18,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true
+}))
+
 app.use('/', indexRouter);
+app.use('/users', userRouter);
 
 var server = http.createServer(app);
 server.listen(port);
