@@ -3,6 +3,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var debug = require('debug')('food-app:server');
 var http = require('http');
+var cors = require('cors')
 require('dotenv').config();
 var session = require('express-session')
 
@@ -13,6 +14,9 @@ var app = express();
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
+app.use(cors({
+    origin: '*',
+}))
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
