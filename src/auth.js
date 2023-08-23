@@ -1,6 +1,6 @@
 const isAuthenticated = function (req, res, next) {
     if (!req.session.user) {
-        res.sendStatus(401);
+        return res.sendStatus(401);
     }
     next();
 }
