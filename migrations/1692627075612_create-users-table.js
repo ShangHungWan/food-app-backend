@@ -9,6 +9,16 @@ exports.up = pgm => {
         password: { type: 'varchar(255)', notNull: true },
         name: { type: 'varchar(255)', notNull: true, index: true },
         phone: { type: 'char(10)', notNull: true, index: true },
+        birthday: { type: 'date', notNull: true, index: true },
+        address: { type: 'varchar(255)', notNull: true, index: true },
+        gender: { type: 'varchar(10)', notNull: true, index: true },
+        avatar_id: {
+            type: 'integer',
+            notNull: true,
+            references: 'avatars(id)',
+            onDelete: 'cascade',
+            index: true,
+        },
         created_at: {
             type: 'timestamp',
             notNull: true,
@@ -18,7 +28,7 @@ exports.up = pgm => {
             type: 'timestamp',
             notNull: true,
             default: pgm.func('current_timestamp')
-        }
+        },
     });
 };
 

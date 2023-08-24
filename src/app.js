@@ -6,9 +6,13 @@ var http = require('http');
 var cors = require('cors')
 require('dotenv').config();
 var session = require('express-session')
+const fileUpload = require('express-fileupload');
 
 var indexRouter = require('./routes/index');
 var userRouter = require('./routes/user');
+var postRouter = require('./routes/post');
+var authRouter = require('./routes/auth');
+var fileRouter = require('./routes/file');
 
 var app = express();
 var port = normalizePort(process.env.PORT || '3000');
@@ -21,6 +25,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(fileUpload());
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
@@ -29,7 +34,10 @@ app.use(session({
 }))
 
 app.use('/', indexRouter);
-app.use('/users', userRouter);
+app.use('/', userRouter);
+app.use('/', postRouter);
+app.use('/', authRouter);
+app.use('/', fileRouter);
 
 var server = http.createServer(app);
 server.listen(port);
