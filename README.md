@@ -3,7 +3,13 @@
 ## Environment
 
 ```shell
+cp .env.example .env
+
+# Dev
+cp Dockerfile.dev Dockerfile
 cp docker-compose-dev.yml.example docker-compose-dev.yml
+# or
+cp Dockerfile.prod Dockerfile
 cp docker-compose-prod.yml.example docker-compose-prod.yml
 ```
 
