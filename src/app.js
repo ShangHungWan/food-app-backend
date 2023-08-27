@@ -13,6 +13,8 @@ var userRouter = require('./routes/user');
 var postRouter = require('./routes/post');
 var authRouter = require('./routes/auth');
 var fileRouter = require('./routes/file');
+var resturantRouter = require('./routes/resturant');
+var regionRouter = require('./routes/region');
 var uploadRouter = require('./routes/upload');
 
 var app = express();
@@ -39,6 +41,8 @@ app.use('/', userRouter);
 app.use('/', postRouter);
 app.use('/', authRouter);
 app.use('/', fileRouter);
+app.use('/', resturantRouter);
+app.use('/', regionRouter);
 app.use('/', uploadRouter);
 
 var server = http.createServer(app);
