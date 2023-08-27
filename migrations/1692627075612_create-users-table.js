@@ -9,9 +9,9 @@ exports.up = pgm => {
         password: { type: 'varchar(255)', notNull: true },
         name: { type: 'varchar(255)', notNull: true, index: true },
         phone: { type: 'char(10)', notNull: true, index: true },
-        birthday: { type: 'date', notNull: true, index: true },
-        address: { type: 'varchar(255)', notNull: true, index: true },
-        gender: { type: 'varchar(10)', notNull: true, index: true },
+        birthday: { type: 'date', notNull: false, index: true },
+        address: { type: 'varchar(255)', notNull: false, index: true },
+        gender: { type: 'varchar(10)', notNull: false, index: true },
         image_id: {
             type: 'integer',
             notNull: true,

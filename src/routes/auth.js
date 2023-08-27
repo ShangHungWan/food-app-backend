@@ -12,9 +12,9 @@ router.post(
         body("email").notEmpty().trim().isEmail(),
         body("name").notEmpty().isString().trim().escape().isLength({ min: 1, max: 16 }),
         body("phone").notEmpty().isMobilePhone('zh-TW'),
-        body("birthday").notEmpty().isDate(),
-        body("address").notEmpty().isString().trim().escape().isLength({ min: 1, max: 255 }),
-        body("gender").isIn(GENDER),
+        body("birthday").optional().isDate(),
+        body("address").optional().isString().trim().escape().isLength({ min: 1, max: 255 }),
+        body("gender").optional().isIn(GENDER),
         body("image_id").notEmpty().isInt(),
         body("password").notEmpty().isString().trim().escape().isLength({ min: 8, max: 16 }).custom((value, { req, loc, path }) => {
             if (value !== req.body.confirm_password) {
