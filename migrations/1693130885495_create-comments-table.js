@@ -12,10 +12,10 @@ exports.up = pgm => {
             onDelete: 'cascade',
             index: true,
         },
-        resturant_id: {
+        restaurant_id: {
             type: 'integer',
             notNull: true,
-            references: 'resturants(id)',
+            references: 'restaurants(id)',
             onDelete: 'cascade',
             index: true,
         },

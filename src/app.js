@@ -13,7 +13,7 @@ var userRouter = require('./routes/user');
 var postRouter = require('./routes/post');
 var authRouter = require('./routes/auth');
 var fileRouter = require('./routes/file');
-var resturantRouter = require('./routes/resturant');
+var restaurantRouter = require('./routes/restaurant');
 var regionRouter = require('./routes/region');
 var uploadRouter = require('./routes/upload');
 
@@ -41,7 +41,7 @@ app.use('/', userRouter);
 app.use('/', postRouter);
 app.use('/', authRouter);
 app.use('/', fileRouter);
-app.use('/', resturantRouter);
+app.use('/', restaurantRouter);
 app.use('/', regionRouter);
 app.use('/', uploadRouter);
 

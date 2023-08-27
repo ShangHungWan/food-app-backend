@@ -3,7 +3,7 @@
 exports.shorthands = undefined;
 
 exports.up = pgm => {
-    pgm.createTable('resturants', {
+    pgm.createTable('restaurants', {
         id: 'id',
         region_id: {
             type: 'integer',
@@ -38,5 +38,5 @@ exports.up = pgm => {
 };
 
 exports.down = pgm => {
-    pgm.dropTable('resturants');
+    pgm.dropTable('restaurants');
 };

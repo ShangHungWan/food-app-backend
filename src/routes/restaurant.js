@@ -4,7 +4,7 @@ var db = require("../db");
 const { isAuthenticated } = require("../middlewares/auth");
 const { body, validationResult } = require("express-validator");
 
-router.get("/resturants", function (req, res, next) {
+router.get("/restaurants", function (req, res, next) {
   req.query.search = req.query.search || '';
   req.query.region = req.query.region || '';
   req.query.sort = req.query.sort || '';
@@ -17,10 +17,10 @@ router.get("/resturants", function (req, res, next) {
       i.url AS image_url, \
       r.created_at, \
       r.updated_at \
-    FROM resturants AS r \
+    FROM restaurants AS r \
     JOIN images as i on r.image_id = i.id \
     JOIN regions as reg on r.region_id = reg.id \
-    LEFT JOIN comments as c on r.id = c.resturant_id \
+    LEFT JOIN comments as c on r.id = c.restaurant_id \
     WHERE (r.name LIKE $1 OR r.address LIKE $1 OR r.phone LIKE $1)";
   if (req.query.region) {
     sql += "AND r.region_id = $2";
@@ -57,7 +57,7 @@ router.get("/resturants", function (req, res, next) {
     });
 });
 
-router.get("/resturant/:resturantId", function (req, res, next) {
+router.get("/restaurant/:restaurantId", function (req, res, next) {
   db.oneOrNone("SELECT \
       r.id, \
       round(avg(c.score)::numeric, 1) AS score, \
@@ -70,10 +70,10 @@ router.get("/resturant/:resturantId", function (req, res, next) {
       i.url AS image_url, \
       r.created_at, \
       r.updated_at \
-    FROM resturants AS r \
+    FROM restaurants AS r \
     JOIN images as i on r.image_id = i.id \
     JOIN regions as reg on r.region_id = reg.id \
-    LEFT JOIN comments as c on r.id = c.resturant_id \
+    LEFT JOIN comments as c on r.id = c.restaurant_id \
     WHERE r.id = $1 \
     GROUP BY \
     r.id, \
@@ -86,7 +86,7 @@ router.get("/resturant/:resturantId", function (req, res, next) {
     i.url, \
     r.created_at, \
     r.updated_at;",
-    [req.params.resturantId]
+    [req.params.restaurantId]
   )
     .then(function (data) {
       if (!data) {
@@ -107,7 +107,7 @@ router.get("/resturant/:resturantId", function (req, res, next) {
 });
 
 router.post(
-  "/resturant",
+  "/restaurant",
   [
     body("region_id").notEmpty().isInt(),
     body("image_id").notEmpty().isInt(),
@@ -123,7 +123,7 @@ router.post(
       return res.send({ errors: validation.array() });
     }
 
-    db.query('INSERT INTO resturants (${this:name}) VALUES(${this:csv}); ', {
+    db.query('INSERT INTO restaurants (${this:name}) VALUES(${this:csv}); ', {
       region_id: req.body.region_id,
       image_id: req.body.image_id,
       name: req.body.name,
@@ -144,7 +144,7 @@ router.post(
       });
   });
 
-router.get("/resturant/:resturantId/comments", function (req, res, next) {
+router.get("/restaurant/:restaurantId/comments", function (req, res, next) {
   req.query.has_image = req.query.has_image === true;
   req.query.sort_by = req.query.sort_by || 'created_at';
   req.query.sort_order = req.query.sort_order || 'desc';
@@ -174,7 +174,7 @@ router.get("/resturant/:resturantId/comments", function (req, res, next) {
       c.created_at, \
       c.updated_at \
     FROM comments AS c \
-    JOIN resturants as r on c.resturant_id = r.id \
+    JOIN restaurants as r on c.restaurant_id = r.id \
     JOIN images as i on c.image_id = i.id \
     JOIN users as u on c.user_id = u.id \
     JOIN images as avatar on u.image_id = avatar.id \
@@ -188,7 +188,7 @@ router.get("/resturant/:resturantId/comments", function (req, res, next) {
 
   db.any(sql,
     [
-      req.params.resturantId,
+      req.params.restaurantId,
       req.query.sort_by,
     ],
   )
@@ -204,7 +204,7 @@ router.get("/resturant/:resturantId/comments", function (req, res, next) {
 });
 
 router.post(
-  "/resturant/:resturantId/comment",
+  "/restaurant/:restaurantId/comment",
   [
     body("image_id").optional().isInt(),
     body("comment").notEmpty().isString().trim().escape(),
@@ -226,7 +226,7 @@ router.post(
     }
 
     db.query('INSERT INTO comments (${this:name}) VALUES(${this:csv}); ', {
-      resturant_id: req.params.resturantId,
+      restaurant_id: req.params.restaurantId,
       user_id: req.session.user,
       image_id: req.body.image_id,
       comment: req.body.comment,
