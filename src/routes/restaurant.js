@@ -133,7 +133,17 @@ router.post(
       business_hours: req.body.business_hours,
     })
       .then(function (data) {
-        res.sendStatus(200);
+        db.oneOrNone('SELECT id from restaurants order by id desc limit 1;')
+          .then(function (data) {
+            res.send(data);
+          })
+          .catch(function (error) {
+            res
+              .status(400)
+              .send({
+                message: error.message,
+              });
+          });
       })
       .catch(function (error) {
         res
