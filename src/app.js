@@ -13,6 +13,7 @@ var userRouter = require('./routes/user');
 var postRouter = require('./routes/post');
 var authRouter = require('./routes/auth');
 var fileRouter = require('./routes/file');
+var uploadRouter = require('./routes/upload');
 
 var app = express();
 var port = normalizePort(process.env.PORT || '3000');
@@ -38,6 +39,7 @@ app.use('/', userRouter);
 app.use('/', postRouter);
 app.use('/', authRouter);
 app.use('/', fileRouter);
+app.use('/', uploadRouter);
 
 var server = http.createServer(app);
 server.listen(port);

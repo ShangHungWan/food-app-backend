@@ -15,7 +15,7 @@ router.post(
         body("birthday").notEmpty().isDate(),
         body("address").notEmpty().isString().trim().escape().isLength({ min: 1, max: 255 }),
         body("gender").isIn(GENDER),
-        body("avatar_id").notEmpty().isInt(),
+        body("image_id").notEmpty().isInt(),
         body("password").notEmpty().isString().trim().escape().isLength({ min: 8, max: 16 }).custom((value, { req, loc, path }) => {
             if (value !== req.body.confirm_password) {
                 throw new Error("Passwords don't match");
@@ -44,7 +44,7 @@ router.post(
             birthday: req.body.birthday,
             address: req.body.address,
             gender: req.body.gender,
-            avatar_id: req.body.avatar_id,
+            image_id: req.body.image_id,
         })
             .then(function (data) {
                 res.sendStatus(200);
@@ -57,51 +57,6 @@ router.post(
                     });
             });
     },
-);
-
-router.post(
-    "/auth/upload/avatar",
-    async function (req, res, next) {
-        let avatar;
-        let uploadPath;
-
-        if (!req.files || Object.keys(req.files).length === 0) {
-            return res.status(400).send('No files were uploaded.');
-        }
-
-        avatar = req.files.avatar;
-        uploadPath = __dirname + '/../../uploads/avatars/' + avatar.name;
-        const path = '/uploads/avatars/' + avatar.name;
-
-        avatar.mv(uploadPath, async function (err) {
-            if (err)
-                return res.status(500).send(err);
-
-            await db.oneOrNone('INSERT INTO "public"."avatars" ("url") VALUES ($1);', path)
-                .then(function () {
-                    return;
-                })
-                .catch(function (error) {
-                    res
-                        .status(400)
-                        .send({
-                            message: error.message,
-                        });
-                });
-            const result = await db.oneOrNone('SELECT id from avatars WHERE url = $1 order by id desc limit 1;', path)
-                .then(function (data) {
-                    return data;
-                })
-                .catch(function (error) {
-                    res
-                        .status(400)
-                        .send({
-                            message: error.message,
-                        });
-                });
-            res.send(result);
-        });
-    }
 );
 
 router.post(

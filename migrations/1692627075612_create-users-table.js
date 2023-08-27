@@ -12,10 +12,10 @@ exports.up = pgm => {
         birthday: { type: 'date', notNull: true, index: true },
         address: { type: 'varchar(255)', notNull: true, index: true },
         gender: { type: 'varchar(10)', notNull: true, index: true },
-        avatar_id: {
+        image_id: {
             type: 'integer',
             notNull: true,
-            references: 'avatars(id)',
+            references: 'images(id)',
             onDelete: 'cascade',
             index: true,
         },
