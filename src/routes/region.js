@@ -3,7 +3,7 @@ var router = express.Router();
 var db = require("../db");
 
 router.get("/regions", function (req, res, next) {
-  db.any("SELECT * FROM regions")
+  db.any("SELECT name FROM regions")
     .then(function (data) {
       res.send(data);
     })

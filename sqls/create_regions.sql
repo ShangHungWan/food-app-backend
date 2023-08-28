@@ -18,3 +18,5 @@ INSERT INTO "regions" ("name") VALUES ('宜蘭縣');
 INSERT INTO "regions" ("name") VALUES ('花蓮縣');
 INSERT INTO "regions" ("name") VALUES ('臺東縣');
 INSERT INTO "regions" ("name") VALUES ('澎湖縣');
+INSERT INTO "regions" ("name") VALUES ('金門縣');
+INSERT INTO "regions" ("name") VALUES ('連江縣');
