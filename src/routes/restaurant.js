@@ -5,45 +5,21 @@ const { isAuthenticated } = require("../middlewares/auth");
 const { body, validationResult } = require("express-validator");
 
 router.get("/restaurants", function (req, res, next) {
-  req.query.search = req.query.search || '';
-  req.query.region = req.query.region || '';
-  req.query.sort = req.query.sort || '';
+  req.query.place_ids = req.query.place_ids || '';
   let sql = "SELECT \
-      r.id, \
-      round(avg(c.score)::numeric, 1) AS score, \
-      reg.name as region_name, \
-      r.name, \
-      r.address, \
-      i.url AS image_url, \
-      r.created_at, \
-      r.updated_at \
+    r.place_id, \
+    round(avg(c.score)::numeric, 1) AS score, \
+    r.created_at \
     FROM restaurants AS r \
-    JOIN images as i on r.image_id = i.id \
-    JOIN regions as reg on r.region_id = reg.id \
     LEFT JOIN comments as c on r.id = c.restaurant_id \
-    WHERE (r.name LIKE $1 OR r.address LIKE $1 OR r.phone LIKE $1)";
-  if (req.query.region) {
-    sql += "AND r.region_id = $2";
-  }
-  if (req.query.sort) {
-    // TODO
-  }
-  sql += "GROUP BY \
-  r.id, \
-  reg.name, \
-  r.name, \
-  r.address, \
-  r.phone, \
-  r.url, \
-  r.business_hours, \
-  i.url, \
-  r.created_at, \
-  r.updated_at;";
+    WHERE r.place_id IN ($1:csv) \
+    GROUP BY \
+    r.place_id, \
+    r.created_at;";
 
   db.any(sql,
     [
-      `%${req.query.search}%`,
-      req.query.region,
+      req.query.place_ids,
     ],
   )
     .then(function (data) {
@@ -154,7 +130,7 @@ router.post(
       });
   });
 
-router.get("/restaurant/:restaurantId/comments", function (req, res, next) {
+router.get("/restaurant/:placeId/comments", function (req, res, next) {
   req.query.has_image = req.query.has_image === true;
   req.query.sort_by = req.query.sort_by || 'created_at';
   req.query.sort_order = req.query.sort_order || 'desc';
@@ -188,7 +164,7 @@ router.get("/restaurant/:restaurantId/comments", function (req, res, next) {
     JOIN images as i on c.image_id = i.id \
     JOIN users as u on c.user_id = u.id \
     JOIN images as avatar on u.image_id = avatar.id \
-    WHERE r.id = $1";
+    WHERE r.place_id = $1";
 
   if (req.query.has_image) {
     sql += " AND c.image_id IS NOT NULL";
@@ -198,7 +174,7 @@ router.get("/restaurant/:restaurantId/comments", function (req, res, next) {
 
   db.any(sql,
     [
-      req.params.restaurantId,
+      req.params.placeId,
       req.query.sort_by,
     ],
   )
@@ -214,7 +190,7 @@ router.get("/restaurant/:restaurantId/comments", function (req, res, next) {
 });
 
 router.post(
-  "/restaurant/:restaurantId/comment",
+  "/restaurant/:placeId/comment",
   [
     body("image_id").optional().isInt(),
     body("comment").notEmpty().isString().trim().escape(),
@@ -235,8 +211,31 @@ router.post(
         });
     }
 
+    const restaurantId = db.any("SELECT \
+      r.id \
+      FROM restaurants AS r \
+      WHERE r.place_id = $1",
+      [
+        req.query.place_ids,
+      ],
+    )
+      .then(function (data) {
+        return data.id;
+      })
+      .catch(function (error) {
+        return null;
+      });
+
+    if (restaurantId === null) {
+      return res
+        .status(404)
+        .send({
+          message: 'not found',
+        });
+    }
+
     db.query('INSERT INTO comments (${this:name}) VALUES(${this:csv}); ', {
-      restaurant_id: req.params.restaurantId,
+      restaurant_id: restaurantId,
       user_id: req.session.user,
       image_id: req.body.image_id,
       comment: req.body.comment,
