@@ -4,7 +4,7 @@ var db = require("../db");
 const { isAuthenticated } = require("../middlewares/auth");
 const { body, validationResult } = require("express-validator");
 
-router.get("/restaurants", function (req, res, next) {
+router.get("/restaurants", async function (req, res, next) {
   req.query.place_ids = req.query.place_ids || '';
   let sql = "SELECT \
     r.place_id, \
@@ -17,13 +17,11 @@ router.get("/restaurants", function (req, res, next) {
     r.place_id, \
     r.created_at;";
 
-  db.any(sql,
-    [
-      req.query.place_ids,
-    ],
+  const result = await db.any(sql,
+    [req.query.place_ids],
   )
     .then(function (data) {
-      res.send(data);
+      return data;
     })
     .catch(function (error) {
       res.status(400).send({
@@ -31,104 +29,41 @@ router.get("/restaurants", function (req, res, next) {
         message: error.message,
       });
     });
-});
 
-router.get("/restaurant/:restaurantId", function (req, res, next) {
-  db.oneOrNone("SELECT \
-      r.id, \
-      round(avg(c.score)::numeric, 1) AS score, \
-      reg.name as region_name, \
-      r.name, \
-      r.address, \
-      r.phone, \
-      r.url, \
-      r.business_hours, \
-      i.url AS image_url, \
-      r.created_at, \
-      r.updated_at \
-    FROM restaurants AS r \
-    JOIN images as i on r.image_id = i.id \
-    JOIN regions as reg on r.region_id = reg.id \
-    LEFT JOIN comments as c on r.id = c.restaurant_id \
-    WHERE r.id = $1 \
-    GROUP BY \
-    r.id, \
-    reg.name, \
-    r.name, \
-    r.address, \
-    r.phone, \
-    r.url, \
-    r.business_hours, \
-    i.url, \
-    r.created_at, \
-    r.updated_at;",
-    [req.params.restaurantId]
-  )
-    .then(function (data) {
-      if (!data) {
-        return res.status(404).send({
-          status: "error",
-          message: 'not found',
-        });
-      }
-
-      res.send(data);
-    })
-    .catch(function (error) {
-      res.status(400).send({
-        status: "error",
-        message: error.message,
-      });
+  const missingRestaurantIds = req.query.place_ids.filter((placeId) => {
+    return !result.some((restaurant) => {
+      return restaurant.place_id === placeId;
     });
-});
-
-router.post(
-  "/restaurant",
-  [
-    body("region_id").notEmpty().isInt(),
-    body("image_id").notEmpty().isInt(),
-    body("name").notEmpty().isString().trim().escape().isLength({ min: 1, max: 255 }),
-    body("phone").notEmpty().isMobilePhone('zh-TW'),
-    body("address").notEmpty().isString().trim().escape().isLength({ min: 1, max: 255 }),
-    body("url").notEmpty().isURL().isLength({ min: 1, max: 255 }),
-    body("business_hours").notEmpty().isString().trim().escape().isLength({ min: 1, max: 255 }),
-  ],
-  async function (req, res, next) {
-    const validation = validationResult(req);
-    if (!validation.isEmpty()) {
-      return res.send({ errors: validation.array() });
-    }
-
-    db.query('INSERT INTO restaurants (${this:name}) VALUES(${this:csv}); ', {
-      region_id: req.body.region_id,
-      image_id: req.body.image_id,
-      name: req.body.name,
-      address: req.body.address,
-      phone: req.body.phone,
-      url: req.body.url,
-      business_hours: req.body.business_hours,
-    })
-      .then(function (data) {
-        db.oneOrNone('SELECT id from restaurants order by id desc limit 1;')
-          .then(function (data) {
-            res.send(data);
-          })
-          .catch(function (error) {
-            res
-              .status(400)
-              .send({
-                message: error.message,
-              });
-          });
-      })
-      .catch(function (error) {
-        res
-          .status(400)
-          .send({
-            message: error.message,
-          });
-      });
   });
+
+  for (restaurantId of missingRestaurantIds) {
+    await getOrCreate(restaurantId);
+  }
+
+  db.any(sql,
+    [req.query.place_ids],
+  )
+    .then(function (data) {
+      res.send(data);
+    })
+    .catch(function (error) {
+      res.status(400).send({
+        status: "error",
+        message: error.message,
+      });
+    });
+});
+
+router.get("/restaurant/:restaurantId", async function (req, res, next) {
+  try {
+    res.send(await getOrCreate(req.params.restaurantId, res));
+  } catch (error) {
+    res.status(400).send({
+      status: "error",
+      message: error.message,
+    });
+  }
+});
 
 router.get("/restaurant/:placeId/comments", function (req, res, next) {
   req.query.has_image = req.query.has_image === true;
@@ -197,7 +132,7 @@ router.post(
     body("score").notEmpty().isInt(),
   ],
   isAuthenticated,
-  function (req, res, next) {
+  async function (req, res, next) {
     const validation = validationResult(req);
     if (!validation.isEmpty()) {
       return res.send({ errors: validation.array() });
@@ -211,15 +146,14 @@ router.post(
         });
     }
 
-    const restaurantId = db.any("SELECT \
+    const restaurantId = await db.one("SELECT \
       r.id \
       FROM restaurants AS r \
       WHERE r.place_id = $1",
-      [
-        req.query.place_ids,
-      ],
+      [req.params.placeId],
     )
       .then(function (data) {
+        console.log(data);
         return data.id;
       })
       .catch(function (error) {
@@ -234,7 +168,7 @@ router.post(
         });
     }
 
-    db.query('INSERT INTO comments (${this:name}) VALUES(${this:csv}); ', {
+    db.query('INSERT INTO comments (${this:name}) VALUES(${this:csv});', {
       restaurant_id: restaurantId,
       user_id: req.session.user,
       image_id: req.body.image_id,
@@ -252,5 +186,46 @@ router.post(
           });
       });
   });
+
+async function getOrCreate(restaurantId) {
+  const exists = await db.oneOrNone("SELECT \
+      place_id \
+    FROM restaurants as r \
+    WHERE r.place_id = $1",
+    [restaurantId],
+  )
+    .then(function (data) {
+      return data !== null;
+    })
+    .catch(function (error) {
+      throw error;
+    });
+
+  if (!exists) {
+    await db.query('INSERT INTO restaurants (place_id) VALUES($1)', [restaurantId])
+      .catch(function (error) {
+        throw error;
+      });
+  }
+
+  return await db.any("SELECT \
+    r.place_id, \
+    round(avg(c.score)::numeric, 1) AS score, \
+    r.created_at \
+    FROM restaurants AS r \
+    LEFT JOIN comments as c on r.id = c.restaurant_id \
+    WHERE r.place_id = $1 \
+    GROUP BY \
+    r.place_id, \
+    r.created_at",
+    [restaurantId],
+  )
+    .then(function (data) {
+      return data;
+    })
+    .catch(function (error) {
+      throw error;
+    });
+}
 
 module.exports = router;
