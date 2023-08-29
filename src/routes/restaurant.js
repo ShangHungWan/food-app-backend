@@ -208,7 +208,7 @@ async function getOrCreate(restaurantId) {
       });
   }
 
-  return await db.any("SELECT \
+  return await db.one("SELECT \
     r.place_id, \
     round(avg(c.score)::numeric, 1) AS score, \
     r.created_at \
