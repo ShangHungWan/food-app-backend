@@ -135,7 +135,7 @@ router.post(
   async function (req, res, next) {
     const validation = validationResult(req);
     if (!validation.isEmpty()) {
-      return res.send({ errors: validation.array() });
+      return res.status(400).send({ errors: validation.array() });
     }
 
     if (req.body.score < 1 || req.body.score > 5) {
@@ -153,7 +153,6 @@ router.post(
       [req.params.placeId],
     )
       .then(function (data) {
-        console.log(data);
         return data.id;
       })
       .catch(function (error) {
