@@ -29,7 +29,6 @@ router.get("/users", isAuthenticated, function (req, res, next) {
     })
     .catch(function (error) {
       res.status(400).send({
-        status: "error",
         message: error.message,
       });
     });
@@ -52,7 +51,6 @@ router.get("/user/:userId", function (req, res, next) {
     .then(function (data) {
       if (!data) {
         return res.status(404).send({
-          status: "error",
           message: 'not found',
         });
       }
@@ -61,7 +59,6 @@ router.get("/user/:userId", function (req, res, next) {
     })
     .catch(function (error) {
       res.status(400).send({
-        status: "error",
         message: error.message,
       });
     });
@@ -74,7 +71,6 @@ router.get("/user/:userId/friends", function (req, res, next) {
     .then(function (data) {
       if (!data) {
         return res.status(404).send({
-          status: "error",
           message: 'not found',
         });
       }
@@ -83,7 +79,6 @@ router.get("/user/:userId/friends", function (req, res, next) {
     })
     .catch(function (error) {
       res.status(400).send({
-        status: "error",
         message: error.message,
       });
     });
@@ -114,7 +109,6 @@ router.get("/me", isAuthenticated, function (req, res, next) {
     })
     .catch(function (error) {
       res.status(400).send({
-        status: "error",
         message: error.message,
       });
     });

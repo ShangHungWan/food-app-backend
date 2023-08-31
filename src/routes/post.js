@@ -25,10 +25,7 @@ router.get("/posts", isAuthenticated, function (req, res, next) {
       res.send(data);
     })
     .catch(function (error) {
-      res.status(400).send({
-        status: "error",
-        message: error.message,
-      });
+      res.status(400).send({ message: error.message });
     });
 });
 

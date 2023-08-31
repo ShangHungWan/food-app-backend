@@ -27,13 +27,13 @@ router.post(
     async function (req, res, next) {
         const validation = validationResult(req);
         if (!validation.isEmpty()) {
-            return res.status(400).send({ errors: validation.array() });
+            return res.status(400).send({ message: 'Validation failed.' });
         }
 
         // check if email exists
         const emailResult = await db.oneOrNone('SELECT * FROM users WHERE email = $1', req.body.email);
         if (emailResult) {
-            return res.status(400).send({ errors: [{ msg: 'Email already exists' }] });
+            return res.status(400).send({ message: 'Email already exists.' });
         }
 
         db.query('INSERT INTO users (${this:name}) VALUES(${this:csv}); ', {
@@ -68,7 +68,7 @@ router.post(
     async function (req, res, next) {
         const validation = validationResult(req);
         if (!validation.isEmpty()) {
-            return res.status(400).send({ errors: validation.array() });
+            return res.status(400).send({ message: 'Validation failed.' });
         }
 
         const result = await db.oneOrNone('SELECT id, password from users WHERE email = $1;', req.body.email)
@@ -86,7 +86,7 @@ router.post(
         if (!result || !validate_password(req.body.password, result.password)) {
             return res
                 .status(400)
-                .send({ message: 'Login failed' });
+                .send({ message: 'Login failed.' });
         }
 
         req.session.regenerate(function (err) {
@@ -94,7 +94,7 @@ router.post(
                 console.log(err);
                 return res
                     .status(400)
-                    .send({ message: 'Login failed' });
+                    .send({ message: 'Login failed.' });
             }
 
             req.session.user = result.id;
@@ -110,7 +110,7 @@ router.post('/auth/logout', isAuthenticated, function (req, res, next) {
             console.log(err);
             return res
                 .status(400)
-                .send({ message: 'Logout failed' });
+                .send({ message: 'Logout failed.' });
         }
 
         req.session.regenerate(function (err) {
@@ -118,7 +118,7 @@ router.post('/auth/logout', isAuthenticated, function (req, res, next) {
                 console.log(err);
                 return res
                     .status(400)
-                    .send({ message: 'Logout failed' });
+                    .send({ message: 'Logout failed.' });
             }
             return res.sendStatus(204);
         })

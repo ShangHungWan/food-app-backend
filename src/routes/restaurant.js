@@ -24,10 +24,7 @@ router.get("/restaurants", async function (req, res, next) {
       return data;
     })
     .catch(function (error) {
-      res.status(400).send({
-        status: "error",
-        message: error.message,
-      });
+      res.status(400).send({ message: error.message });
     });
 
   const missingRestaurantIds = req.query.place_ids.filter((placeId) => {
@@ -36,8 +33,12 @@ router.get("/restaurants", async function (req, res, next) {
     });
   });
 
-  for (restaurantId of missingRestaurantIds) {
-    await getOrCreate(restaurantId);
+  try {
+    for (restaurantId of missingRestaurantIds) {
+      await getOrCreate(restaurantId);
+    }
+  } catch (error) {
+    res.status(400).send({ message: error.message });
   }
 
   db.any(sql,
@@ -47,10 +48,7 @@ router.get("/restaurants", async function (req, res, next) {
       res.send(data);
     })
     .catch(function (error) {
-      res.status(400).send({
-        status: "error",
-        message: error.message,
-      });
+      res.status(400).send({ message: error.message });
     });
 });
 
@@ -58,10 +56,7 @@ router.get("/restaurant/:restaurantId", async function (req, res, next) {
   try {
     res.send(await getOrCreate(req.params.restaurantId, res));
   } catch (error) {
-    res.status(400).send({
-      status: "error",
-      message: error.message,
-    });
+    res.status(400).send({ message: error.message });
   }
 });
 
@@ -117,10 +112,7 @@ router.get("/restaurant/:placeId/comments", function (req, res, next) {
       res.send(data);
     })
     .catch(function (error) {
-      res.status(400).send({
-        status: "error",
-        message: error.message,
-      });
+      res.status(400).send({ message: error.message });
     });
 });
 
@@ -135,7 +127,7 @@ router.post(
   async function (req, res, next) {
     const validation = validationResult(req);
     if (!validation.isEmpty()) {
-      return res.status(400).send({ errors: validation.array() });
+      return res.status(400).send({ message: 'Validation failed.' });
     }
 
     if (req.body.score < 1 || req.body.score > 5) {

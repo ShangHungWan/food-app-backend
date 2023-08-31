@@ -9,7 +9,7 @@ router.post(
         let uploadPath;
 
         if (!req.files || Object.keys(req.files).length === 0 || !req.files.file) {
-            return res.status(400).send('No files were uploaded.');
+            return res.status(400).send({ message: 'No files were uploaded.' });
         }
 
         file = req.files.file;
@@ -19,7 +19,7 @@ router.post(
 
         file.mv(uploadPath, async function (err) {
             if (err)
-                return res.status(500).send(err);
+                return res.status(500).send({ message: err.message });
 
             await db.oneOrNone('INSERT INTO images ("url") VALUES ($1);', path)
                 .then(function () {
