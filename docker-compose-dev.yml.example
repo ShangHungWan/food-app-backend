@@ -24,5 +24,6 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - /var/lib/postgresql/data
+      - ./sqls:/sqls
     ports:
       - "5432:5432"
