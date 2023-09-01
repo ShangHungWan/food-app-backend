@@ -4,6 +4,7 @@ services:
     build: .
     ports:
       - "3000:3000"
+    restart: unless-stopped
     environment:
       - PORT=3000
       - NODE_ENV=production
@@ -12,7 +13,7 @@ services:
       - postgres
   postgres:
     image: postgres:15.3-alpine3.18
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: foodappuser
       POSTGRES_DB: food_app
