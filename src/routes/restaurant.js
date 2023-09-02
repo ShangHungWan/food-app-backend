@@ -134,7 +134,7 @@ router.post(
       return res
         .status(400)
         .send({
-          message: 'score must between 1~5.',
+          message: 'Score must between 1~5.',
         });
     }
 
@@ -155,7 +155,7 @@ router.post(
       return res
         .status(404)
         .send({
-          message: 'not found',
+          message: 'Not found',
         });
     }
 
