@@ -66,16 +66,12 @@ router.get("/user/:userId", function (req, res, next) {
 });
 
 router.get("/user/:userId/friends", function (req, res, next) {
-  db.oneOrNone("SELECT id, name, image_url from users WHERE id IN ( \
+  db.any("SELECT u.id, u.name, a.url as image_url from users as u \
+  JOIN images as a on u.image_id = a.id \
+  WHERE u.id IN ( \
     SELECT friend_id FROM users_friends WHERE user_id = $1 \
   )", req.params.userId)
     .then(function (data) {
-      if (!data) {
-        return res.status(404).send({
-          message: 'Not found',
-        });
-      }
-
       res.send(data);
     })
     .catch(function (error) {
@@ -89,6 +85,22 @@ router.post("/user/:userId/friend-request", isAuthenticated, async function (req
   if (req.session.user === req.params.userId) {
     return res.status(404).send({
       message: 'Can\'t send request to yourself.',
+    });
+  }
+
+  const existFriend = await db.oneOrNone("SELECT * FROM users_friends WHERE user_id = $1 AND friend_id = $2", [
+    req.session.user,
+    req.params.userId,
+  ])
+    .catch(function (error) {
+      res.status(400).send({
+        message: error.message,
+      });
+    });
+
+  if (existFriend) {
+    return res.status(400).send({
+      message: 'Already friends.',
     });
   }
 
@@ -146,6 +158,111 @@ router.get("/me", isAuthenticated, function (req, res, next) {
     ", req.session.user)
     .then(function (data) {
       res.send(data);
+    })
+    .catch(function (error) {
+      res.status(400).send({
+        message: error.message,
+      });
+    });
+});
+
+router.get("/friends-requests", isAuthenticated, function (req, res, next) {
+  db.any("SELECT \
+    fr.id, \
+    fr.sender_id, \
+    u.name, \
+    img.url AS image_url, \
+    fr.created_at \
+    FROM friends_requests as fr \
+    JOIN users as u on u.id = sender_id \
+    JOIN images as img on u.image_id = img.id \
+    WHERE receiver_id = $1 AND status = $2",
+    [
+      req.session.user,
+      FRIENDS_REQUEST_STATUS.PENDING,
+    ])
+    .then(function (data) {
+      res.send(data);
+    })
+    .catch(function (error) {
+      res.status(400).send({
+        message: error.message,
+      });
+    });
+});
+
+router.put("/friends-request/:friendRequestId/accept", isAuthenticated, async function (req, res, next) {
+  const request = await db.oneOrNone("SELECT * FROM friends_requests WHERE receiver_id = $1 AND status = $2 AND id = $3",
+    [
+      req.session.user,
+      FRIENDS_REQUEST_STATUS.PENDING,
+      req.params.friendRequestId,
+    ])
+    .then(function (data) {
+      return data;
+    })
+    .catch(function (error) {
+      return null;
+    });
+
+  if (!request) {
+    return res.status(404).send({
+      message: 'Not found',
+    });
+  }
+
+  await db.any("UPDATE friends_requests SET status=$1 WHERE id = $2",
+    [
+      FRIENDS_REQUEST_STATUS.ACCEPTED,
+      request.id,
+    ])
+    .catch(function (error) {
+      res.status(400).send({
+        message: error.message,
+      });
+    });
+
+  await db.any("INSERT INTO users_friends (user_id, friend_id) VALUES ($1, $2), ($2, $1)",
+    [
+      request.sender_id,
+      request.receiver_id,
+    ])
+    .catch(function (error) {
+      res.status(400).send({
+        message: error.message,
+      });
+    });
+
+  res.sendStatus(204);
+});
+
+router.put("/friends-request/:friendRequestId/reject", isAuthenticated, async function (req, res, next) {
+  const request = await db.oneOrNone("SELECT * FROM friends_requests WHERE receiver_id = $1 AND status = $2 AND id = $3",
+    [
+      req.session.user,
+      FRIENDS_REQUEST_STATUS.PENDING,
+      req.params.friendRequestId,
+    ])
+    .then(function (data) {
+      return data;
+    })
+    .catch(function (error) {
+      return null;
+    });
+
+  if (!request) {
+    return res.status(404).send({
+      message: 'Not found',
+    });
+  }
+
+  db.any("UPDATE friends_requests SET status=$1 WHERE id = $2",
+    [
+      FRIENDS_REQUEST_STATUS.REJECTED,
+      request.id,
+    ])
+    .then(function (data) {
+      res.sendStatus(204);
     })
     .catch(function (error) {
       res.status(400).send({
