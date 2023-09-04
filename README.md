@@ -45,5 +45,5 @@ docker-compose down # prod
 
 ```shell
 docker-compose exec web npm run migrate up
-docker-compose exec postgres -U foodappuser -d food_app -a -f /sqls/create_regions.sql
+docker-compose exec postgres psql -U foodappuser -d food_app -a -f /sqls/create_regions.sql
 ```
