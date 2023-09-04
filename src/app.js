@@ -16,6 +16,7 @@ var fileRouter = require('./routes/file');
 var restaurantRouter = require('./routes/restaurant');
 var regionRouter = require('./routes/region');
 var uploadRouter = require('./routes/upload');
+var notificationRouter = require('./routes/notification');
 
 var app = express();
 var port = normalizePort(process.env.PORT || '3000');
@@ -44,6 +45,7 @@ app.use('/', fileRouter);
 app.use('/', restaurantRouter);
 app.use('/', regionRouter);
 app.use('/', uploadRouter);
+app.use('/', notificationRouter);
 
 var server = http.createServer(app);
 server.listen(port);

@@ -3,6 +3,7 @@ var router = express.Router();
 var db = require("../helpers/db");
 const { body, validationResult } = require("express-validator");
 const { isAuthenticated } = require("../middlewares/auth");
+const { createNotification } = require("../helpers/notification");
 
 // TODO: pagination
 router.get("/posts", isAuthenticated, function (req, res, next) {
@@ -137,6 +138,18 @@ router.post(
               message: error.message,
             });
         });
+    }
+
+    // send notification to friends
+    const friends = await db.any("SELECT \
+        friend_id, \
+        users.name as friend_name \
+        FROM users_friends \
+        JOIN users ON users_friends.user_id = users.id \
+        WHERE user_id = $1",
+      req.session.user);
+    for (friend of friends) {
+      createNotification(friend.friend_id, 'post', result.id, `${friend.friend_name} publish a new post.`);
     }
 
     res.send(result);
@@ -279,6 +292,12 @@ router.put("/post/:postId/like", isAuthenticated, async function (req, res, next
   ]);
   if (like) {
     return res.status(400).send({ message: 'Already liked.' });
+  }
+
+  // send notification to friend
+  if (post.user_id !== req.session.user) {
+    const me = await db.one("SELECT * from users WHERE id = $1", req.session.user);
+    createNotification(post.user_id, 'post', post.id, `${me.name} like your post.`);
   }
 
   db.none("INSERT INTO posts_likes (post_id, user_id) VALUES ($1, $2)", [
