@@ -159,7 +159,7 @@ router.post(
         });
     }
 
-    db.query('INSERT INTO comments (${this:name}) VALUES(${this:csv});', {
+    db.none('INSERT INTO comments (${this:name}) VALUES(${this:csv});', {
       restaurant_id: restaurantId,
       user_id: req.session.user,
       image_id: req.body.image_id,
@@ -193,7 +193,7 @@ async function getOrCreate(restaurantId) {
     });
 
   if (!exists) {
-    await db.query('INSERT INTO restaurants (place_id) VALUES($1)', [restaurantId])
+    await db.none('INSERT INTO restaurants (place_id) VALUES($1)', [restaurantId])
       .catch(function (error) {
         throw error;
       });

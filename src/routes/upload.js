@@ -21,7 +21,7 @@ router.post(
             if (err)
                 return res.status(500).send({ message: err.message });
 
-            await db.oneOrNone('INSERT INTO images ("url") VALUES ($1);', path)
+            await db.none('INSERT INTO images ("url") VALUES ($1);', path)
                 .then(function () {
                     return;
                 })

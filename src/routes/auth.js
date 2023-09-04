@@ -36,7 +36,7 @@ router.post(
             return res.status(400).send({ message: 'Email already exists.' });
         }
 
-        db.query('INSERT INTO users (${this:name}) VALUES(${this:csv});', {
+        db.none('INSERT INTO users (${this:name}) VALUES(${this:csv});', {
             name: req.body.name,
             email: req.body.email,
             password: await hash_password(req.body.password),

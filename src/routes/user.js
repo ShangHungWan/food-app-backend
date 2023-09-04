@@ -81,6 +81,36 @@ router.get("/user/:userId/friends", function (req, res, next) {
     });
 });
 
+router.get("/user/:userId/posts", function (req, res, next) {
+  db.any("SELECT \
+    p.id, \
+    p.user_id, \
+    p.restaurant, \
+    p.content, \
+    count(posts_likes.user_id)::int as likes_count, \
+    CASE WHEN pl.user_id IS NOT NULL THEN true ELSE false END as user_likes_post, \
+    p.created_at, \
+    p.updated_at \
+    FROM posts as p \
+    LEFT JOIN posts_likes ON p.id = posts_likes.post_id \
+    LEFT JOIN posts_likes as pl ON p.id = pl.post_id AND pl.user_id = $2 \
+    WHERE p.user_id = $1 \
+    GROUP BY p.id, pl.user_id",
+    [
+      req.params.userId,
+      req.session.user,
+    ],
+  )
+    .then(function (data) {
+      res.send(data);
+    })
+    .catch(function (error) {
+      res.status(400).send({
+        message: error.message,
+      });
+    });
+});
+
 router.post("/user/:userId/friend-request", isAuthenticated, async function (req, res, next) {
   if (req.session.user === req.params.userId) {
     return res.status(404).send({
@@ -121,7 +151,7 @@ router.post("/user/:userId/friend-request", isAuthenticated, async function (req
     });
   }
 
-  db.oneOrNone("INSERT INTO friends_requests (${this:name}) VALUES(${this:csv});", {
+  db.none("INSERT INTO friends_requests (${this:name}) VALUES(${this:csv});", {
     sender_id: req.session.user,
     receiver_id: req.params.userId,
     status: FRIENDS_REQUEST_STATUS.PENDING,
@@ -211,7 +241,7 @@ router.put("/friends-request/:friendRequestId/accept", isAuthenticated, async fu
     });
   }
 
-  await db.any("UPDATE friends_requests SET status=$1 WHERE id = $2",
+  await db.none("UPDATE friends_requests SET status=$1 WHERE id = $2",
     [
       FRIENDS_REQUEST_STATUS.ACCEPTED,
       request.id,
@@ -222,7 +252,7 @@ router.put("/friends-request/:friendRequestId/accept", isAuthenticated, async fu
       });
     });
 
-  await db.any("INSERT INTO users_friends (user_id, friend_id) VALUES ($1, $2), ($2, $1)",
+  await db.none("INSERT INTO users_friends (user_id, friend_id) VALUES ($1, $2), ($2, $1)",
     [
       request.sender_id,
       request.receiver_id,
@@ -256,7 +286,7 @@ router.put("/friends-request/:friendRequestId/reject", isAuthenticated, async fu
     });
   }
 
-  db.any("UPDATE friends_requests SET status=$1 WHERE id = $2",
+  db.none("UPDATE friends_requests SET status=$1 WHERE id = $2",
     [
       FRIENDS_REQUEST_STATUS.REJECTED,
       request.id,
