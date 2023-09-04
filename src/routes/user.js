@@ -1,8 +1,11 @@
 var express = require("express");
 var router = express.Router();
 var db = require("../db");
+const { body, validationResult } = require("express-validator");
 const { isAuthenticated } = require("../middlewares/auth");
 const { FRIENDS_REQUEST_STATUS } = require("../enums/friends_request_status");
+const { hash_password, validate_password } = require("../bcrypt");
+const { GENDER } = require("../enums/genders");
 
 // TODO: pagination
 router.get("/users", isAuthenticated, function (req, res, next) {
@@ -195,6 +198,70 @@ router.get("/me", isAuthenticated, function (req, res, next) {
       });
     });
 });
+
+router.patch(
+  "/me",
+  [
+    body("name").optional().isString().trim().escape().isLength({ min: 1, max: 16 }),
+    body("phone").optional().isMobilePhone('zh-TW'),
+    body("birthday").optional().isDate(),
+    body("address").optional().isString().trim().escape().isLength({ min: 1, max: 255 }),
+    body("gender").optional().isIn(GENDER),
+    body("image_id").optional().isInt(),
+    body("password").notEmpty().isString().trim().custom(async function (value, { req, loc, path }) {
+      const result = await db.oneOrNone('SELECT * FROM users WHERE id = $1', req.session.user);
+      if (!validate_password(value, result.password)) {
+        throw new Error("Passwords don't match");
+      } else {
+        return value;
+      }
+    }),
+    body("new_password").optional().isString().trim().escape().isLength({ min: 8, max: 16 }).custom((value, { req, loc, path }) => {
+      if (value !== req.body.new_confirm_password) {
+        throw new Error("Passwords don't match");
+      } else {
+        return value;
+      }
+    }),
+  ],
+  isAuthenticated,
+  async function (req, res, next) {
+    const validation = validationResult(req);
+    if (!validation.isEmpty()) {
+      console.log(validation.errors)
+      return res.status(400).send({ message: 'Validation failed.' });
+    }
+
+    const result = await db.oneOrNone('SELECT * FROM users WHERE id = $1', req.session.user);
+
+    const name = req.body.name || result.name;
+    const phone = req.body.phone || result.phone;
+    const birthday = req.body.birthday || result.birthday;
+    const address = req.body.address || result.address;
+    const gender = req.body.gender || result.gender;
+    const image_id = req.body.image_id || result.image_id;
+    const password = await hash_password(req.body.new_password || req.body.password);
+
+    db.none("UPDATE users SET name=$1, phone=$2, birthday=$3, address=$4, gender=$5, image_id=$6, password=$7 WHERE id = $8",
+      [
+        name,
+        phone,
+        birthday,
+        address,
+        gender,
+        image_id,
+        password,
+        req.session.user,
+      ])
+      .then(function (data) {
+        res.sendStatus(204);
+      })
+      .catch(function (error) {
+        res.status(400).send({
+          message: error.message,
+        });
+      });
+  });
 
 router.get("/friends-requests", isAuthenticated, function (req, res, next) {
   db.any("SELECT \
