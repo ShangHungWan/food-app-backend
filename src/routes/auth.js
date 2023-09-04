@@ -1,8 +1,8 @@
 var express = require("express");
 var router = express.Router();
-var db = require("../db");
+var db = require("../helpers/db");
 const { body, validationResult } = require("express-validator");
-const { hash_password, validate_password } = require("../bcrypt");
+const { hash_password, validate_password } = require("../helpers/bcrypt");
 const { isAuthenticated } = require("../middlewares/auth");
 const { GENDER } = require("../enums/genders");
 

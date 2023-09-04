@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-var db = require("../db");
+var db = require("../helpers/db");
 
 router.get("/regions", function (req, res, next) {
   db.any("SELECT name FROM regions")

@@ -1,10 +1,10 @@
 var express = require("express");
 var router = express.Router();
-var db = require("../db");
+var db = require("../helpers/db");
 const { body, validationResult } = require("express-validator");
 const { isAuthenticated } = require("../middlewares/auth");
 const { FRIENDS_REQUEST_STATUS } = require("../enums/friends_request_status");
-const { hash_password, validate_password } = require("../bcrypt");
+const { hash_password, validate_password } = require("../helpers/bcrypt");
 const { GENDER } = require("../enums/genders");
 
 // TODO: pagination
