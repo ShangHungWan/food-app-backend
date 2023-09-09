@@ -112,32 +112,39 @@ router.post(
       return res.status(400).send({ message: 'Validation failed.' });
     }
 
-    await db.none('INSERT INTO posts (${this:name}) VALUES(${this:csv});', {
+    const error = await db.none('INSERT INTO posts (${this:name}) VALUES(${this:csv});', {
       user_id: req.session.user,
       restaurant: req.body.restaurant,
       content: req.body.content,
     })
       .catch(function (error) {
-        res
-          .status(400)
-          .send({
-            message: error.message,
-          });
+        return error;
       });
+    if (error) {
+      return res
+        .status(400)
+        .send({
+          message: error.message,
+        });
+    }
     const result = await db.oneOrNone('SELECT id from posts order by id desc limit 1;')
 
     for (image_id of req.body.image_ids) {
-      await db.none('INSERT INTO posts_images (post_id, image_id) VALUES ($1, $2);', [
+      const error = await db.none('INSERT INTO posts_images (post_id, image_id) VALUES ($1, $2);', [
         result.id,
         image_id,
       ])
         .catch(function (error) {
-          res
-            .status(400)
-            .send({
-              message: error.message,
-            });
+          return error;
         });
+
+      if (error) {
+        return res
+          .status(400)
+          .send({
+            message: error.message,
+          });
+      }
     }
 
     // send notification to friends
