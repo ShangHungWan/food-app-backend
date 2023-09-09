@@ -3,8 +3,8 @@ var router = express.Router();
 var db = require("../helpers/db");
 const { isAuthenticated } = require("../middlewares/auth");
 
-router.get("/notifications", isAuthenticated, function (req, res, next) {
-  db.any("SELECT \
+router.get("/notifications", isAuthenticated, async function (req, res, next) {
+  const result = await db.any("SELECT \
         id, \
         notifiable_type, \
         notifiable_id, \
@@ -19,13 +19,31 @@ router.get("/notifications", isAuthenticated, function (req, res, next) {
     ],
   )
     .then(function (data) {
-      res.send(data);
+      return data;
     })
     .catch(function (error) {
-      res.status(400).send({
-        message: error.message,
-      });
+      return error;
     });
+
+  if (result instanceof Error) {
+    return res.status(400).send({
+      message: result.message,
+    });
+  }
+
+  for (let notification of result) {
+    const images = await db.any("SELECT \
+        images.id, \
+        images.url \
+        FROM posts_images \
+        JOIN images ON posts_images.image_id = images.id \
+        WHERE posts_images.post_id = $1",
+      notification.notifiable_id,
+    );
+    notification.images = images;
+  }
+
+  return res.send(result);
 });
 
 router.put("/notification/:notificationId/read", isAuthenticated, async function (req, res, next) {
