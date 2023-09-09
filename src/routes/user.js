@@ -135,7 +135,7 @@ router.get("/user/:userId/posts", async function (req, res, next) {
 });
 
 router.post("/user/:userId/friend-request", isAuthenticated, async function (req, res, next) {
-  if (req.session.user === req.params.userId) {
+  if (req.session.user == req.params.userId) {
     return res.status(404).send({
       message: 'Can\'t send request to yourself.',
     });
