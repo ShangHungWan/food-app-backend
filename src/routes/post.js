@@ -127,6 +127,10 @@ router.post(
       return res.status(400).send({ message: 'Validation failed.' });
     }
 
+    if (req.body.image_ids === undefined || !Array.isArray(req.body.image_ids)) {
+      return res.status(400).send({ message: 'image_ids must be array' });
+    }
+
     const error = await db.none('INSERT INTO posts (${this:name}) VALUES(${this:csv});', {
       user_id: req.session.user,
       restaurant: req.body.restaurant,
