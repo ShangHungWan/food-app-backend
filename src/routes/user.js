@@ -90,11 +90,14 @@ router.get("/user/:userId/posts", function (req, res, next) {
     p.user_id, \
     p.restaurant, \
     p.content, \
+    array_agg(images.url) as image_urls, \
     count(posts_likes.user_id)::int as likes_count, \
     CASE WHEN pl.user_id IS NOT NULL THEN true ELSE false END as user_likes_post, \
     p.created_at, \
     p.updated_at \
     FROM posts as p \
+    LEFT JOIN posts_images ON p.id = posts_images.post_id \
+    LEFT JOIN images ON posts_images.image_id = images.id \
     LEFT JOIN posts_likes ON p.id = posts_likes.post_id \
     LEFT JOIN posts_likes as pl ON p.id = pl.post_id AND pl.user_id = $2 \
     WHERE p.user_id = $1 \
