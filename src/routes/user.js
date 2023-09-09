@@ -84,13 +84,12 @@ router.get("/user/:userId/friends", function (req, res, next) {
     });
 });
 
-router.get("/user/:userId/posts", function (req, res, next) {
-  db.any("SELECT \
+router.get("/user/:userId/posts", async function (req, res, next) {
+  const result = await db.any("SELECT \
     p.id, \
     p.user_id, \
     p.restaurant, \
     p.content, \
-    array_agg(images.url) as image_urls, \
     count(posts_likes.user_id)::int as likes_count, \
     CASE WHEN pl.user_id IS NOT NULL THEN true ELSE false END as user_likes_post, \
     p.created_at, \
@@ -108,13 +107,31 @@ router.get("/user/:userId/posts", function (req, res, next) {
     ],
   )
     .then(function (data) {
-      res.send(data);
+      return data;
     })
     .catch(function (error) {
-      res.status(400).send({
-        message: error.message,
-      });
+      return error;
     });
+
+  if (result instanceof Error) {
+    return res.status(400).send({
+      message: result.message,
+    });
+  }
+
+  for (let post of result) {
+    const images = await db.any("SELECT \
+        images.id, \
+        images.url \
+        FROM posts_images \
+        JOIN images ON posts_images.image_id = images.id \
+        WHERE posts_images.post_id = $1",
+      post.id,
+    );
+    post.images = images;
+  }
+
+  res.send(result);
 });
 
 router.post("/user/:userId/friend-request", isAuthenticated, async function (req, res, next) {

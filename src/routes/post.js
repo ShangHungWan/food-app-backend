@@ -6,7 +6,7 @@ const { isAuthenticated } = require("../middlewares/auth");
 const { createNotification } = require("../helpers/notification");
 
 // TODO: pagination
-router.get("/posts", isAuthenticated, function (req, res, next) {
+router.get("/posts", isAuthenticated, async function (req, res, next) {
   req.query.search = req.query.search || '';
   req.query.from_friends = (req.query.from_friends || false) === 'true';
 
@@ -17,14 +17,11 @@ router.get("/posts", isAuthenticated, function (req, res, next) {
   i.url AS user_avatar_url, \
   p.restaurant, \
   p.content, \
-  array_agg(images.url) as image_urls, \
   count(posts_likes.user_id)::int as likes_count, \
   CASE WHEN pl.user_id IS NOT NULL THEN true ELSE false END as user_likes_post, \
   p.created_at, \
   p.updated_at \
   FROM posts as p \
-  LEFT JOIN posts_images ON p.id = posts_images.post_id \
-  LEFT JOIN images ON posts_images.image_id = images.id \
   LEFT JOIN users as u ON p.user_id = u.id \
   LEFT JOIN images as i ON u.image_id = i.id \
   LEFT JOIN posts_likes ON p.id = posts_likes.post_id \
@@ -36,18 +33,36 @@ router.get("/posts", isAuthenticated, function (req, res, next) {
     sql += " HAVING p.user_id IN (SELECT friend_id FROM users_friends WHERE user_id = $2)";
   }
 
-  db.any(sql,
+  const result = await db.any(sql,
     [
       `%${req.query.search}%`,
       req.session.user,
     ],
   )
     .then(function (data) {
-      res.send(data);
+      return data;
     })
     .catch(function (error) {
-      res.status(400).send({ message: error.message });
+      return error;
     });
+
+  if (result instanceof Error) {
+    return res.status(400).send({ message: result.message });
+  }
+
+  for (let post of result) {
+    const images = await db.any("SELECT \
+      images.id, \
+      images.url \
+      FROM posts_images \
+      JOIN images ON posts_images.image_id = images.id \
+      WHERE posts_images.post_id = $1",
+      post.id,
+    );
+    post.images = images;
+  }
+
+  res.send(result);
 });
 
 router.get("/post/:postId", isAuthenticated, async function (req, res, next) {
