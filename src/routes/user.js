@@ -189,12 +189,8 @@ router.post("/user/:userId/friend-request", isAuthenticated, async function (req
     });
 });
 
-router.get("/user/:userId/posts", function (req, res, next) {
-  // TODO
-});
-
-router.get("/me", isAuthenticated, function (req, res, next) {
-  db.one("SELECT \
+router.get("/me", isAuthenticated, async function (req, res, next) {
+  const result = await db.one("SELECT \
     u.id, \
     email, \
     name, \
@@ -210,13 +206,20 @@ router.get("/me", isAuthenticated, function (req, res, next) {
     where u.id = $1 \
     ", req.session.user)
     .then(function (data) {
-      res.send(data);
+      return data;
     })
     .catch(function (error) {
-      res.status(400).send({
-        message: error.message,
-      });
+      return error;
     });
+
+  if (result instanceof Error) {
+    return res.status(400).send({
+      message: result.message,
+    });
+  }
+
+  result.birthday = result.birthday ? result.birthday.toISOString().split('T')[0] : null;
+  return res.send(result);
 });
 
 router.patch(
