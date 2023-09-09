@@ -8,4 +8,7 @@ RUN npm install
 # for hot-reload
 RUN npm install -g nodemon
 
+# install curl for healthcheck
+RUN apk add --no-cache curl
+
 CMD ["npm", "run", "dev"]
