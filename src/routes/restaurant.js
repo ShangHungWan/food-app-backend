@@ -90,10 +90,10 @@ router.get("/restaurant/:placeId/comments", function (req, res, next) {
       c.created_at, \
       c.updated_at \
     FROM comments AS c \
-    JOIN restaurants as r on c.restaurant_id = r.id \
-    JOIN images as i on c.image_id = i.id \
-    JOIN users as u on c.user_id = u.id \
-    JOIN images as avatar on u.image_id = avatar.id \
+    LEFT JOIN restaurants as r on c.restaurant_id = r.id \
+    LEFT JOIN images as i on c.image_id = i.id \
+    LEFT JOIN users as u on c.user_id = u.id \
+    LEFT JOIN images as avatar on u.image_id = avatar.id \
     WHERE r.place_id = $1";
 
   if (req.query.has_image) {

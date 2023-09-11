@@ -15,7 +15,7 @@ router.post(
         body("birthday").optional().isDate(),
         body("address").optional().isString().trim().escape().isLength({ min: 1, max: 255 }),
         body("gender").optional().isIn(GENDER),
-        body("image_id").notEmpty().isInt(),
+        body("image_id").optional().isInt(),
         body("password").notEmpty().isString().trim().escape().isLength({ min: 8, max: 16 }).custom((value, { req, loc, path }) => {
             if (value !== req.body.confirm_password) {
                 throw new Error("Passwords don't match");

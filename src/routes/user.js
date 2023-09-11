@@ -21,7 +21,7 @@ router.get("/users", isAuthenticated, function (req, res, next) {
           SELECT 1 FROM users_friends WHERE user_id = $2 AND u.id = friend_id \
         ) THEN TRUE ELSE FALSE END AS is_friends \
       FROM users AS u \
-      JOIN images as a on u.image_id = a.id \
+      LEFT JOIN images as a on u.image_id = a.id \
       WHERE email LIKE $1 OR name LIKE $1 OR phone LIKE $1",
     [
       `%${req.query.search}%`,
@@ -50,7 +50,7 @@ router.get("/user/:userId", function (req, res, next) {
           SELECT 1 FROM users_friends WHERE user_id = $2 AND u.id = friend_id \
         ) THEN TRUE ELSE FALSE END AS is_friends \
       FROM users AS u \
-      JOIN images as a on u.image_id = a.id \
+      LEFT JOIN images as a on u.image_id = a.id \
       WHERE u.id = $1", [req.params.userId, req.session.user])
     .then(function (data) {
       if (!data) {
@@ -70,7 +70,7 @@ router.get("/user/:userId", function (req, res, next) {
 
 router.get("/user/:userId/friends", function (req, res, next) {
   db.any("SELECT u.id, u.name, a.url as image_url from users as u \
-  JOIN images as a on u.image_id = a.id \
+  LEFT JOIN images as a on u.image_id = a.id \
   WHERE u.id IN ( \
     SELECT friend_id FROM users_friends WHERE user_id = $1 \
   )", req.params.userId)
@@ -202,7 +202,7 @@ router.get("/me", isAuthenticated, async function (req, res, next) {
     u.created_at, \
     u.updated_at \
     from users as u \
-    JOIN images as a on u.image_id = a.id \
+    LEFT JOIN images as a on u.image_id = a.id \
     where u.id = $1 \
     ", req.session.user)
     .then(function (data) {
@@ -295,7 +295,7 @@ router.get("/friends-requests", isAuthenticated, function (req, res, next) {
     fr.created_at \
     FROM friends_requests as fr \
     JOIN users as u on u.id = sender_id \
-    JOIN images as img on u.image_id = img.id \
+    LEFT JOIN images as img on u.image_id = img.id \
     WHERE receiver_id = $1 AND status = $2",
     [
       req.session.user,
