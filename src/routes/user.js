@@ -286,6 +286,73 @@ router.patch(
       });
   });
 
+router.put(
+  "/me/position",
+  [
+    body("latitude").notEmpty().isFloat(),
+    body("longitude").notEmpty().isFloat(),
+  ],
+  isAuthenticated,
+  async function (req, res, next) {
+    const validation = validationResult(req);
+    if (!validation.isEmpty()) {
+      return res.status(400).send({ message: 'Validation failed.' });
+    }
+    if (req.body.latitude < -90 || req.body.latitude > 90) {
+      return res.status(400).send({ message: 'Latitude must be between -90 and 90.' });
+    }
+    if (req.body.longitude < -180 || req.body.longitude > 180) {
+      return res.status(400).send({ message: 'Longitude must be between -180 and 180.' });
+    }
+
+    const result = await db.one('SELECT * FROM users WHERE id = $1', req.session.user);
+
+    db.none("UPDATE users SET last_position=POINT($1, $2) WHERE id = $3",
+      [
+        req.body.latitude,
+        req.body.longitude,
+        req.session.user,
+      ])
+      .then(function (data) {
+        res.sendStatus(204);
+      })
+      .catch(function (error) {
+        res.status(400).send({
+          message: error.message,
+        });
+      });
+  });
+
+router.get(
+  "/me/online-friend-positions",
+  isAuthenticated,
+  async function (req, res, next) {
+    db.any("SELECT \
+      u.id, \
+      u.name, \
+      u.last_position[0] as latitude, \
+      u.last_position[1] as longitude, \
+      a.url AS image_url, \
+      u.updated_at \
+      FROM users AS u \
+      LEFT JOIN images as a on u.image_id = a.id \
+      WHERE u.id IN ( \
+        SELECT friend_id FROM users_friends WHERE user_id = $1 \
+        ) \
+        AND u.last_position IS NOT NULL \
+        AND u.updated_at > NOW() - INTERVAL '3 minute'",
+      req.session.user,
+    )
+      .then(function (data) {
+        res.send(data);
+      })
+      .catch(function (error) {
+        res.status(400).send({
+          message: error.message,
+        });
+      });
+  });
+
 router.get("/friends-requests", isAuthenticated, function (req, res, next) {
   db.any("SELECT \
     fr.id, \
