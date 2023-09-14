@@ -307,7 +307,7 @@ router.put(
 
     const result = await db.one('SELECT * FROM users WHERE id = $1', req.session.user);
 
-    db.none("UPDATE users SET last_position=POINT($1, $2) WHERE id = $3",
+    db.none("UPDATE users SET last_position=POINT($1, $2), updated_at=NOW() WHERE id = $3",
       [
         req.body.latitude,
         req.body.longitude,
