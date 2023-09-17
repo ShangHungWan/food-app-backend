@@ -26,11 +26,13 @@ router.get("/posts", isAuthenticated, async function (req, res, next) {
   LEFT JOIN images as i ON u.image_id = i.id \
   LEFT JOIN posts_likes ON p.id = posts_likes.post_id \
   LEFT JOIN posts_likes as pl ON p.id = pl.post_id AND pl.user_id = $2 \
-  WHERE p.restaurant LIKE $1 OR p.content LIKE $1 \
-  GROUP BY p.id, u.name, i.url, pl.user_id";
+  WHERE (p.restaurant LIKE $1 OR p.content LIKE $1) AND p.user_id != $2 \
+  GROUP BY p.id, u.name, i.url, pl.user_id ";
 
   if (req.query.from_friends) {
-    sql += " HAVING p.user_id IN (SELECT friend_id FROM users_friends WHERE user_id = $2)";
+    sql += "HAVING p.user_id IN (SELECT friend_id FROM users_friends WHERE user_id = $2)";
+  } else {
+    sql += "HAVING p.user_id NOT IN (SELECT friend_id FROM users_friends WHERE user_id = $2)";
   }
 
   const result = await db.any(sql,
