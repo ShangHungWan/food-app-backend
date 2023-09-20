@@ -30,10 +30,12 @@ router.get("/posts", isAuthenticated, async function (req, res, next) {
   GROUP BY p.id, u.name, i.url, pl.user_id ";
 
   if (req.query.from_friends) {
-    sql += "HAVING p.user_id IN (SELECT friend_id FROM users_friends WHERE user_id = $2)";
+    sql += "HAVING p.user_id IN (SELECT friend_id FROM users_friends WHERE user_id = $2) ";
   } else {
-    sql += "HAVING p.user_id NOT IN (SELECT friend_id FROM users_friends WHERE user_id = $2)";
+    sql += "HAVING p.user_id NOT IN (SELECT friend_id FROM users_friends WHERE user_id = $2) ";
   }
+
+  sql += "ORDER BY p.created_at DESC";
 
   const result = await db.any(sql,
     [
